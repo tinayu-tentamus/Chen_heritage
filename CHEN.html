@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>陳氏宗族樹狀祖譜圖（滾動縮放自適應版）</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            /* 防止出現原生滾動條，全部交由 D3 拖拽縮放 */
+            background-color: #f8f9fa;
+            font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+        }
+
+        #title-panel {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 18px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #title-panel h1 {
+            margin: 0;
+            font-size: 20px;
+            color: #1F4E78;
+        }
+
+        #title-panel p {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .node circle {
+            fill: #fff;
+            stroke: #2F5597;
+            stroke-width: 2.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .node circle:hover {
+            stroke: #C65911;
+            r: 7px;
+        }
+
+        .node text {
+            font-size: 13px;
+            fill: #222;
+            text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+            /* 文字白底護眼描邊 */
+            pointer-events: none;
+        }
+
+        .link {
+            fill: none;
+            stroke: #bdc3c7;
+            stroke-width: 1.8px;
+            stroke-opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="title-panel">
+        <h1>陳氏宗族樹狀祖譜圖</h1>
+        <p>💡 提示：滑鼠滾輪可縮放，點擊拖拽可移動畫布，點擊節點可折疊/展開</p>
+    </div>
+
+    <div id="tree-container" style="width: 100vw; height: 100vh;"></div>
+
+    <script>
+        // 1. 載入 JSON 資料（可以改為 d3.json("陳氏子孫_樹狀圖.json") 讀取外部檔）
+
+        const treeData = {
+            "name": "陳加走",
+            "children": [
+                {
+                    "name": "陳矮",
+                    "children": [
+                        {
+                            "name": "陳璉",
+                            "children": [
+                                {
+                                    "name": "陳世達",
+                                    "children": [
+                                        {
+                                            "name": "陳源湶",
+                                            "children": [
+                                                {
+                                                    "name": "陳文龍"
+                                                },
+                                                {
+                                                    "name": "陳文安"
+                                                },
+                                                {
+                                                    "name": "陳玉鳳"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "陳炳煌",
+                                            "children": [
+                                                {
+                                                    "name": "陳玉雲"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "陳梨花"
+                                        },
+                                        {
+                                            "name": "陳麗妍"
+                                        },
+                                        {
+                                            "name": "陳淑瓊"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "陳氏燕雪"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "陳氏美仔",
+                            "children": [
+                                {
+                                    "name": "林源順",
+                                    "children": [
+                                        {
+                                            "name": "林青松"
+                                        },
+                                        {
+                                            "name": "林青助"
+                                        },
+                                        {
+                                            "name": "林庭亦"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "陳氏母"
+                        },
+                        {
+                            "name": "劉陳母",
+                            "children": [
+                                {
+                                    "name": "張劉金英",
+                                    "children": [
+                                        {
+                                            "name": "張錦坤"
+                                        },
+                                        {
+                                            "name": "張登代子"
+                                        },
+                                        {
+                                            "name": "張誠治"
+                                        },
+                                        {
+                                            "name": "張貴美",
+                                            "children": [
+                                                {
+                                                    "name": "趙秀媛"
+                                                },
+                                                {
+                                                    "name": "趙健誠"
+                                                },
+                                                {
+                                                    "name": "趙令杰"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "張月美"
+                                        },
+                                        {
+                                            "name": "林張富美",
+                                            "children": [
+                                                {
+                                                    "name": "林輝文"
+                                                },
+                                                {
+                                                    "name": "林淑娟"
+                                                },
+                                                {
+                                                    "name": "林輝耀"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "陳張春美"
+                                        },
+                                        {
+                                            "name": "張美珠"
+                                        },
+                                        {
+                                            "name": "張健森",
+                                            "children": [
+                                                {
+                                                    "name": "張正宏"
+                                                },
+                                                {
+                                                    "name": "張紋真"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "張義枝",
+                                            "children": [
+                                                {
+                                                    "name": "張文如"
+                                                },
+                                                {
+                                                    "name": "張啟煌"
+                                                },
+                                                {
+                                                    "name": "張正男"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "張桂霖"
+                                        },
+                                        {
+                                            "name": "張美玉"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "陳劉阿花",
+                                    "children": [
+                                        {
+                                            "name": "陳雍明"
+                                        },
+                                        {
+                                            "name": "李陳麗綉"
+                                        },
+                                        {
+                                            "name": "陳麗華"
+                                        },
+                                        {
+                                            "name": "陳雍政"
+                                        },
+                                        {
+                                            "name": "陳慧縈"
+                                        },
+                                        {
+                                            "name": "林陳麗珠",
+                                            "children": [
+                                                {
+                                                    "name": "林佳霖"
+                                                },
+                                                {
+                                                    "name": "林佳穎"
+                                                },
+                                                {
+                                                    "name": "林金龍"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "劉朝宗",
+                                    "children": [
+                                        {
+                                            "name": "劉瑞雄"
+                                        },
+                                        {
+                                            "name": "劉瑞明"
+                                        },
+                                        {
+                                            "name": "劉勇助"
+                                        },
+                                        {
+                                            "name": "劉瑞忠"
+                                        },
+                                        {
+                                            "name": "鄭劉鑾鳳"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "劉朝坤",
+                                    "children": [
+                                        {
+                                            "name": "劉贏暖"
+                                        },
+                                        {
+                                            "name": "劉麗玉"
+                                        },
+                                        {
+                                            "name": "劉旭智"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "劉金調"
+                                },
+                                {
+                                    "name": "劉朝清",
+                                    "children": [
+                                        {
+                                            "name": "劉金蘭"
+                                        },
+                                        {
+                                            "name": "劉錦松"
+                                        },
+                                        {
+                                            "name": "劉枝銘"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "黃劉惜",
+                                    "children": [
+                                        {
+                                            "name": "黃榮耀"
+                                        },
+                                        {
+                                            "name": "劉黃抱治"
+                                        },
+                                        {
+                                            "name": "黃稚嵐"
+                                        },
+                                        {
+                                            "name": "黃美蘭"
+                                        },
+                                        {
+                                            "name": "黃榮傑"
+                                        },
+                                        {
+                                            "name": "黃滎福"
+                                        },
+                                        {
+                                            "name": "黃榮慶"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "劉陳氏母"
+                        }
+                    ]
+                },
+                {
+                    "name": "陳水成",
+                    "children": [
+                        {
+                            "name": "陳羅漢",
+                            "children": [
+                                {
+                                    "name": "陳氏招"
+                                },
+                                {
+                                    "name": "陳氏查某"
+                                },
+                                {
+                                    "name": "陳萬錦"
+                                },
+                                {
+                                    "name": "陳氏月英"
+                                },
+                                {
+                                    "name": "陳賜交",
+                                    "children": [
+                                        {
+                                            "name": "陳政裕",
+                                            "children": [
+                                                {
+                                                    "name": "陳雪珊"
+                                                },
+                                                {
+                                                    "name": "陳瑛志"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "陳勝發"
+                                        },
+                                        {
+                                            "name": "陳麗玉"
+                                        },
+                                        {
+                                            "name": "陳森茂"
+                                        },
+                                        {
+                                            "name": "陳玉盞"
+                                        },
+                                        {
+                                            "name": "陳正義"
+                                        },
+                                        {
+                                            "name": "陳政仁"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "陳賜其"
+                                },
+                                {
+                                    "name": "陳氏月枝"
+                                },
+                                {
+                                    "name": "陳賜榮",
+                                    "children": [
+                                        {
+                                            "name": "陳進添"
+                                        },
+                                        {
+                                            "name": "陳再錫"
+                                        },
+                                        {
+                                            "name": "陳文斌"
+                                        },
+                                        {
+                                            "name": "陳文鎮"
+                                        },
+                                        {
+                                            "name": "陳文卿"
+                                        },
+                                        {
+                                            "name": "陳樹根"
+                                        },
+                                        {
+                                            "name": "陳明泉"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "陳賜五郎"
+                                },
+                                {
+                                    "name": "陳重子"
+                                },
+                                {
+                                    "name": "陳進郎"
+                                },
+                                {
+                                    "name": "陳賜華",
+                                    "children": [
+                                        {
+                                            "name": "陳志雄"
+                                        },
+                                        {
+                                            "name": "陳志忠"
+                                        },
+                                        {
+                                            "name": "陳劉金葉"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "謝陳月枝",
+                                    "children": [
+                                        {
+                                            "name": "謝銀洲"
+                                        },
+                                        {
+                                            "name": "謝宗穎"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "林月英",
+                                    "children": [
+                                        {
+                                            "name": "林大川"
+                                        },
+                                        {
+                                            "name": "林木山"
+                                        },
+                                        {
+                                            "name": "林雪雲"
+                                        },
+                                        {
+                                            "name": "林福標",
+                                            "children": [
+                                                {
+                                                    "name": "林佳賢"
+                                                },
+                                                {
+                                                    "name": "林欣男"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "林愛娥"
+                                        },
+                                        {
+                                            "name": "林雪娥"
+                                        },
+                                        {
+                                            "name": "林福川"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "張陳招",
+                                    "children": [
+                                        {
+                                            "name": "曾張麗華",
+                                            "children": [
+                                                {
+                                                    "name": "曾淑鈴"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "張步昇",
+                                            "children": [
+                                                {
+                                                    "name": "張芙睿"
+                                                },
+                                                {
+                                                    "name": "張尊維"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "張俊治"
+                                        },
+                                        {
+                                            "name": "張良全"
+                                        },
+                                        {
+                                            "name": "張俊英",
+                                            "children": [
+                                                {
+                                                    "name": "張智堅",
+                                                    "children": [
+                                                        {
+                                                            "name": "張玟庭"
+                                                        },
+                                                        {
+                                                            "name": "冷文瑄"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "name": "張智明"
+                                                },
+                                                {
+                                                    "name": "張志宏"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "戴陳氏勤",
+                            "children": [
+                                {
+                                    "name": "戴氏麵",
+                                    "children": [
+                                        {
+                                            "name": "戴氏瓊烟"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "戴氏查某",
+                                    "children": [
+                                        {
+                                            "name": "鄭阿英"
+                                        },
+                                        {
+                                            "name": "鄭文德"
+                                        },
+                                        {
+                                            "name": "鄭阿蔥"
+                                        },
+                                        {
+                                            "name": "鄭文華"
+                                        },
+                                        {
+                                            "name": "趙鄭合"
+                                        },
+                                        {
+                                            "name": "林鄭阿雲",
+                                            "children": [
+                                                {
+                                                    "name": "林麗寬"
+                                                },
+                                                {
+                                                    "name": "林月芬"
+                                                },
+                                                {
+                                                    "name": "林文義"
+                                                },
+                                                {
+                                                    "name": "林美草"
+                                                },
+                                                {
+                                                    "name": "林金女"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "鄭弘",
+                                            "children": [
+                                                {
+                                                    "name": "鄭琇如"
+                                                },
+                                                {
+                                                    "name": "鄭淑珍"
+                                                },
+                                                {
+                                                    "name": "鄭淙丞"
+                                                },
+                                                {
+                                                    "name": "鄭惠鎂"
+                                                },
+                                                {
+                                                    "name": "鄭安荃"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "鄭文忠"
+                                        },
+                                        {
+                                            "name": "鄭文勇",
+                                            "children": [
+                                                {
+                                                    "name": "鄭鉉珠"
+                                                },
+                                                {
+                                                    "name": "酇皓軒"
+                                                },
+                                                {
+                                                    "name": "鄭淑娟"
+                                                },
+                                                {
+                                                    "name": "鄭耀森"
+                                                },
+                                                {
+                                                    "name": "鄭宜成"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "陳鄭阿梅"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "戴氏金蘭"
+                                },
+                                {
+                                    "name": "戴吉士"
+                                },
+                                {
+                                    "name": "戴氏卻"
+                                },
+                                {
+                                    "name": "戴查某"
+                                },
+                                {
+                                    "name": "周戴却",
+                                    "children": [
+                                        {
+                                            "name": "周淵"
+                                        },
+                                        {
+                                            "name": "周月英"
+                                        },
+                                        {
+                                            "name": "周江龍",
+                                            "children": [
+                                                {
+                                                    "name": "周文生"
+                                                },
+                                                {
+                                                    "name": "周世彬"
+                                                },
+                                                {
+                                                    "name": "周翠眉"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "周江樹",
+                                            "children": [
+                                                {
+                                                    "name": "周深池",
+                                                    "children": [
+                                                        {
+                                                            "name": "周晴茹"
+                                                        },
+                                                        {
+                                                            "name": "周倍琨"
+                                                        },
+                                                        {
+                                                            "name": "周宥岑"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "name": "周柏根"
+                                                },
+                                                {
+                                                    "name": "周鈿鋐",
+                                                    "children": [
+                                                        {
+                                                            "name": "周凱廸"
+                                                        },
+                                                        {
+                                                            "name": "周志騰"
+                                                        },
+                                                        {
+                                                            "name": "周秉程"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "name": "周淑枝"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "周福來"
+                                        },
+                                        {
+                                            "name": "張周鳳"
+                                        },
+                                        {
+                                            "name": "周芮廷"
+                                        },
+                                        {
+                                            "name": "魏周玉燕"
+                                        },
+                                        {
+                                            "name": "張周素"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "戴發"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        // 2. 初始化容器與 SVG 畫布
+        const container = document.getElementById('tree-container');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        // 建立 SVG 畫布
+        const svg = d3.select("#tree-container").append("svg")
+            .attr("width", "100%")
+            .attr("height", "100%");
+
+        // 建立包含主內容的 g 標籤（用於支援整體縮放/平移）
+        const gMain = svg.append("g");
+
+        // 3. 設定 D3 拖拽與縮放 (Zoom & Pan) 靈敏度
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 3]) // 縮放範圍：最小 0.1 倍，最大 3 倍
+            .on("zoom", (event) => {
+                gMain.attr("transform", event.transform);
+            });
+
+        svg.call(zoom);
+
+        // 4. 計算樹狀圖佈局
+        const root = d3.hierarchy(treeData, d => d.children);
+
+        // 計算節點數量以動態調整高寬
+        let nodeCount = 0;
+        root.each(() => nodeCount++);
+
+        // 【關鍵調整】：動態計算高度與寬度，確保不會重疊
+        const dynamicHeight = Math.max(height, nodeCount * 28); // 每個節點至少分配 28px 垂直空間
+        const dynamicWidth = Math.max(width, root.height * 220); // 每代之間分配 220px 水平空間
+
+        // 設定樹狀圖形狀
+        const treeLayout = d3.tree()
+            .size([dynamicHeight, dynamicWidth - 300])
+            .separation((a, b) => (a.parent === b.parent ? 1.2 : 1.8)); // 調整相鄰節點間距
+
+        treeLayout(root);
+
+        // 5. 繪製連接線 (Links)
+        const linkGenerator = d3.linkHorizontal()
+            .x(d => d.y)
+            .y(d => d.x);
+
+        gMain.selectAll(".link")
+            .data(root.links())
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", linkGenerator);
+
+        // 6. 繪製節點 (Nodes)
+        const node = gMain.selectAll(".node")
+            .data(root.descendants())
+            .enter().append("g")
+            .attr("class", "node")
+            .attr("transform", d => `translate(${d.y},${d.x})`);
+
+        // 圓點
+        node.append("circle")
+            .attr("r", 5)
+            .style("fill", d => d.children ? "#2F5597" : "#fff");
+
+        // 名字文字（確保水平文字且正確與圓點維持距離）
+        node.append("text")
+            .attr("dy", "0.32em")
+            .attr("x", d => d.children ? -10 : 10)
+            .attr("text-anchor", d => d.children ? "end" : "start")
+            .text(d => d.data.name);
+
+        // 7. 【預設視野自動居中與縮放】
+        // 自動將樹放置於畫布中央稍微靠左位置
+        const initialScale = Math.min(0.85, height / dynamicHeight);
+        const initialTransform = d3.zoomIdentity
+            .translate(80, (height - dynamicHeight * initialScale) / 2)
+            .scale(initialScale);
+
+        svg.call(zoom.transform, initialTransform);
+
+        // 8. 視窗大小改變時自動自適應
+        window.addEventListener('resize', () => {
+            const newW = container.clientWidth;
+            const newH = container.clientHeight;
+            svg.attr("width", newW).attr("height", newH);
+        });
+    </script>
+</body>
+
+</html>
