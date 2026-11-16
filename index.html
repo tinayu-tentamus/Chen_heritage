@@ -3766,7 +3766,7 @@
                 .attr("x", 10)
                 .attr("y", -CARD_H / 2 + 56)
                 .attr("font-size", "10px")
-                .attr("fill", "#64748b")
+                .attr("fill","#000000")
                 .text(d => d.data.birth_date ? `生:${d.data.birth_date}` : "");
 
             // 卒年（第二行，換行顯示）
@@ -3774,7 +3774,7 @@
                 .attr("x", 10)
                 .attr("y", -CARD_H / 2 + 70)
                 .attr("font-size", "10px")
-                .attr("fill", "#64748b")
+                .attr("fill", "#000000")
                 .text(d => d.data.death_date ? `卒:${d.data.death_date}` : "");
 
             // 折疊按鈕
@@ -3879,7 +3879,7 @@
                 .attr("x", 10)
                 .attr("y", -CARD_H / 2 + 56)
                 .attr("font-size", "10px")
-                .attr("fill", "#9d174d")
+                .attr("fill","#000000")
                 .text(d => {
                     const sp = d.data.spouses[0];
                     return sp.birth_date ? `生:${sp.birth_date}` : "";
@@ -3890,7 +3890,7 @@
                 .attr("x", 10)
                 .attr("y", -CARD_H / 2 + 70)
                 .attr("font-size", "10px")
-                .attr("fill", "#9d174d")
+                .attr("fill","#000000")
                 .text(d => {
                     const sp = d.data.spouses[0];
                     return sp.death_date ? `卒:${sp.death_date}` : "";
