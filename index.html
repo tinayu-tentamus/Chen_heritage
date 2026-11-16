@@ -150,6 +150,11 @@
                 <i class="fa-solid fa-file-export"></i>
                 <span>匯出完整 SVG</span>
             </button>
+             <button id="btn-export-svg-partial"
+                class="w-full flex items-center justify-center space-x-1.5 px-2 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md border border-emerald-200 transition">
+                <i class="fa-solid fa-file-export"></i>
+                <span>匯出所選 SVG</span>
+            </button>
         </div>
         </div>
 
@@ -4097,6 +4102,56 @@
                 URL.revokeObjectURL(url);
             }, 450);
         });
+
+        document.getElementById('btn-export-svg-partial').addEventListener('click', () => {
+    const originalSvg = document.querySelector('#tree-container svg');
+    const gElement = originalSvg.querySelector('g');
+    if (!originalSvg || !gElement) return;
+
+    // 1. 直接取得「目前畫面上已展開節點」的實際邊界範圍
+    const bbox = gElement.getBBox();
+    const padding = 40;
+
+    // 2. 複製目前的 SVG 結構（不更動任何展開/折疊狀態）
+    const clonedSvg = originalSvg.cloneNode(true);
+    const clonedG = clonedSvg.querySelector('g');
+
+    // 3. 重設 viewBox 與尺寸以完整包覆目前展開的樹狀圖
+    const viewBoxX = bbox.x - padding;
+    const viewBoxY = bbox.y - padding;
+    const width = bbox.width + padding * 2;
+    const height = bbox.height + padding * 2;
+
+    clonedSvg.setAttribute('viewBox', `${viewBoxX} ${viewBoxY} ${width} ${height}`);
+    clonedSvg.setAttribute('width', width);
+    clonedSvg.setAttribute('height', height);
+    clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+    // 移除畫面縮放/拖拽的 transform，讓匯出的圖檔從左上角對齊
+    clonedG.removeAttribute('transform');
+
+    // 4. 注入內嵌 CSS 樣式（確保字體與連線樣式在外部檢視器正常顯示）
+    const styleSheet = document.getElementById('tree-styles');
+    if (styleSheet) {
+        const styleClone = styleSheet.cloneNode(true);
+        clonedSvg.insertBefore(styleClone, clonedSvg.firstChild);
+    }
+
+    // 5. 觸發下載 SVG 檔案
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(clonedSvg);
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `陳加走族譜_目前展開_${new Date().toISOString().slice(0, 10)}.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+});
+        
 
         window.addEventListener('resize', () => {
             width = container.clientWidth;
