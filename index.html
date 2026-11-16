@@ -3874,17 +3874,26 @@
                 .attr("fill", "#831843")
                 .text(d => d.data.spouses[0].name);
 
+            // 配偶生年（第一行）
             spouseGroup.append("text")
                 .attr("x", 10)
-                .attr("y", -CARD_H / 2 + 60)
+                .attr("y", -CARD_H / 2 + 56)
                 .attr("font-size", "10px")
                 .attr("fill", "#9d174d")
                 .text(d => {
                     const sp = d.data.spouses[0];
-                    let dates = [];
-                    if (sp.birth_date) dates.push(`生:${sp.birth_date}`);
-                    if (sp.death_date) dates.push(`卒:${sp.death_date}`);
-                    return dates.join(" ");
+                    return sp.birth_date ? `生:${sp.birth_date}` : "";
+                });
+
+            // 配偶卒年（第二行，換行顯示）
+            spouseGroup.append("text")
+                .attr("x", 10)
+                .attr("y", -CARD_H / 2 + 70)
+                .attr("font-size", "10px")
+                .attr("fill", "#9d174d")
+                .text(d => {
+                    const sp = d.data.spouses[0];
+                    return sp.death_date ? `卒:${sp.death_date}` : "";
                 });
 
             // Transition 合併
