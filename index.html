@@ -3761,17 +3761,21 @@
                 .attr("fill", "#0f172a")
                 .text(d => d.data.name);
 
+           // 生年（第一行）
             mainCardGroup.append("text")
                 .attr("x", 10)
-                .attr("y", -CARD_H / 2 + 60)
+                .attr("y", -CARD_H / 2 + 56)
                 .attr("font-size", "10px")
                 .attr("fill", "#64748b")
-                .text(d => {
-                    let dates = [];
-                    if (d.data.birth_date) dates.push(`生:${d.data.birth_date}`);
-                    if (d.data.death_date) dates.push(`卒:${d.data.death_date}`);
-                    return dates.join(" ");
-                });
+                .text(d => d.data.birth_date ? `生:${d.data.birth_date}` : "");
+
+            // 卒年（第二行，換行顯示）
+            mainCardGroup.append("text")
+                .attr("x", 10)
+                .attr("y", -CARD_H / 2 + 70)
+                .attr("font-size", "10px")
+                .attr("fill", "#64748b")
+                .text(d => d.data.death_date ? `卒:${d.data.death_date}` : "");
 
             // 折疊按鈕
             const toggleGroup = mainCardGroup.append("g")
