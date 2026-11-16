@@ -12,7 +12,7 @@
     <!-- FontAwesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <style>
+    <style id="tree-styles">
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&display=swap');
 
         body,
@@ -143,6 +143,14 @@
                 <i class="fa-solid fa-arrow-rotate-left"></i>
                 <span>重置視角</span>
             </button>
+            <!-- Export SVG Button -->
+        <div class="mt-2">
+            <button id="btn-export-svg"
+                class="w-full flex items-center justify-center space-x-1.5 px-2 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md border border-emerald-200 transition">
+                <i class="fa-solid fa-file-export"></i>
+                <span>匯出完整 SVG</span>
+            </button>
+        </div>
         </div>
 
         <div class="mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between items-center">
@@ -4016,6 +4024,65 @@
                     svg.transition().duration(750).call(zoom.transform, transform);
                 }, 100);
             }
+        });
+
+        // 匯出完整向量 SVG
+        d3.select("#btn-export-svg").on("click", () => {
+            // 1. 先展開所有節點（暫時關閉過渡動畫以立即取得完整座標）
+            root.each(d => {
+                if (d._children) {
+                    d.children = d._children;
+                    d._children = null;
+                }
+            });
+            update(root);
+
+            // 等待 D3 400ms 展開動畫完成後再擷取完整邊界
+            setTimeout(() => {
+                const bbox = gMain.node().getBBox();
+                const padding = 60;
+                const fullWidth = Math.ceil(bbox.width + padding * 2);
+                const fullHeight = Math.ceil(bbox.height + padding * 2);
+
+                const clonedSvg = svg.node().cloneNode(true);
+                clonedSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+                clonedSvg.setAttribute("width", fullWidth);
+                clonedSvg.setAttribute("height", fullHeight);
+                clonedSvg.setAttribute("viewBox", `${bbox.x - padding} ${bbox.y - padding} ${fullWidth} ${fullHeight}`);
+
+                // 重置縮放位移並移除折疊小圓鈕
+                const clonedGMain = clonedSvg.querySelector("g");
+                clonedGMain.removeAttribute("transform");
+                clonedSvg.querySelectorAll(".toggle-group").forEach(el => el.remove());
+
+                // 加上白底
+                const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                bgRect.setAttribute("x", bbox.x - padding);
+                bgRect.setAttribute("y", bbox.y - padding);
+                bgRect.setAttribute("width", fullWidth);
+                bgRect.setAttribute("height", fullHeight);
+                bgRect.setAttribute("fill", "#ffffff");
+                clonedSvg.insertBefore(bgRect, clonedGMain);
+
+                // 內嵌原本的 CSS 樣式
+                const styleEl = document.createElementNS("http://www.w3.org/2000/svg", "style");
+                styleEl.textContent = document.getElementById("tree-styles").textContent + `
+                    text { font-family: "Microsoft JhengHei", "Noto Serif TC", sans-serif; }
+                `;
+                clonedSvg.insertBefore(styleEl, clonedSvg.firstChild);
+
+                // 下載檔案
+                const svgString = new XMLSerializer().serializeToString(clonedSvg);
+                const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "陳氏宗族樹狀祖譜圖.svg";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 450);
         });
 
         window.addEventListener('resize', () => {
